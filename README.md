@@ -1,10 +1,10 @@
 # OrganizationChart
-# To Run Application
+Run Application
  Use Visual Studio
  Press F5 or Run 
  
  
-#Description
+Description
 -Upload CSV file
 -Display Organization chart
 Application is based on ASP.NET MVC C# and Razor

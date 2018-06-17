@@ -1,0 +1,97 @@
+﻿@using OrganizationChart.Models
+@model FileUploadModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta name="viewport" content="width=device-width" />
+    <title>Index</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+</head>
+<body>
+    <h1>Organization Chart</h1>
+    @if (Model.UploadFileFlag)
+    {
+        @ViewBag.Message
+        <br/>
+        <input type="button" name="drawChart" id="drawChartId" value="Display Chart" />
+        @Html.HiddenFor(model => model.FilePathUploaded)
+
+        <div id="ChartId"></div>
+    }
+    else
+    {
+        ViewBag.Title = "Upload File to view Organization Chart";
+        using (Html.BeginForm("Index", "Employee", FormMethod.Post, new { enctype = "multipart/form-data" }))
+        {
+            <input type="file" name="uploadFile" />
+            <input type="submit" value="Upload" />
+        }
+    }
+
+</body>
+</html>
+@section scripts{
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+}
+
+<script>
+    var jsonResult = [];
+    var test = '@Model.FilePathUploaded';
+
+
+    $('#drawChartId').click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/Employee/GetOrgChart",
+            data: '{"FileName" : "' + test + '" }',
+            contentType: "application/json; charset=utf-8",
+            dataType: "json",
+            success: function(employeeDetails) {
+                jsonResult = employeeDetails;
+                google.charts.load("visualization", "1", { packages: ["orgchart"] });
+                google.charts.setOnLoadCallback(drawOrgChart);
+            },
+            error: function(employeeDetails) {
+                alert(employeeDetails);
+
+            }
+        });
+    });
+
+    function drawOrgChart() {
+        //Object structure
+
+        var chartData = new google.visualization.DataTable();
+        chartData.addColumn('string', 'Name');
+        chartData.addColumn('string', 'Manager');
+        chartData.addColumn('string', 'ToolTip');
+
+        // Loop through the resultset
+        $.each(jsonResult,
+            function(key, jsonObj) {
+                var reportID = jsonObj.ManagerId === "0" ? '' : jsonObj.ManagerId;
+                chartData.addRows([[{
+                    v: jsonObj.EmployeeId,
+                            f: jsonObj.FirstName +
+                                '<div style="color:blue; font-style:italic">' +
+                                jsonObj.Title +
+                                '</div>'
+                }, reportID, jsonObj.Title
+                    ]
+                ]);
+            });
+        // Create the chart.
+        var chart = new google.visualization.OrgChart($("#ChartId")[0]);
+        // Draw the chart, setting the allowHtml option to true for the tooltips.
+        chart.draw(chartData, { allowHtml: true });
+    }
+</script>
